@@ -16,6 +16,9 @@ did32 pipcreate() {
             cur = &pipe_tables[i] ; 
             cur->state = PIPE_USED ; 
             cur->creater_pid = currpid ;  
+            cur->pip_head = cur->pipbuf ; 
+            cur->pip_tail = cur->pip_head ;
+
             devpipe = PIPELINE0 + i ; 
             break ; 
         }

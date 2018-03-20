@@ -7,6 +7,8 @@ status pipdelete(did32 devpipe) {
 	// 1. check if the caller is valid
     struct pipe_t* cur ; 
     cur = &pipe_tables[devpipe-PIPELINE0] ;
+    
+    //kprintf(" Cur proc [ %d ] wants to delete the pipe[%d]. \n" , currpid , devpipe-PIPELINE0) ; 
 
     if( currpid != cur->creater_pid &&
         currpid != cur->reader_pid &&
@@ -19,7 +21,6 @@ status pipdelete(did32 devpipe) {
     pipdisconnect(devpipe) ; 
 
     cur->state = PIPE_FREE ;   
-   
     semdelete( cur ->Reader_sema);
     semdelete( cur ->Sender_sema);
 
