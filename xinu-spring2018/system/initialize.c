@@ -4,6 +4,10 @@
 
 #include <xinu.h>
 #include <string.h>
+#if EJ_Lab2
+#include <pipe.h>
+#endif
+
 
 extern	void	start(void);	/* Start of Xinu code			*/
 extern	void	*_end;		/* End of Xinu code			*/
@@ -16,6 +20,10 @@ extern	void meminit(void);	/* Initializes the free memory list	*/
 local	process startup(void);	/* Process to finish startup tasks	*/
 
 /* Declarations of major kernel variables */
+
+#if EJ_Lab2
+struct	pipe_t	pipe_tables[MAXPIPES];	/* Pipe table			*/
+#endif
 
 struct	procent	proctab[NPROC];	/* Process table			*/
 struct	sentry	semtab[NSEM];	/* Semaphore table			*/
@@ -209,7 +217,29 @@ static	void	sysinit()
 	}
 
     // LAB2: TODO: initialize pipe_tables[MAXPIPES]
-
+	#if EJ_Lab2
+    // 1. Create 10 pipes with pipid 0 ~ 9
+    // 2. Set default states 
+    // 3. Put them into pipe_tables
+    // 4. Create 2 seamphore for each pipe 
+    for( int t = 0 ; t < MAXPIPES ; t++){        
+	    struct pipe_t *pipptr ;		/* Ptr to process table entry	*/
+		pipptr = &pipe_tables[t];
+        pipptr->pipid = t ; 
+        pipptr->state = PIPE_FREE ;
+        //pipptr->pipbuf = new char[PIPE_SIZE] ; 
+        pipptr->pip_head = pipptr->pipbuf ;  
+        pipptr->pip_tail = pipptr->pipbuf ;  
+        //struct pipe_t* temp = new pipe_t(t) ; 
+        //temp.pipid = t ; 
+        //temp.state = PIPE_FREE ;
+        //temp.Sender_sema = semcreate(PIPE_SIZE) ; 
+        //temp.Reader_sema = semcreate(0) ; 
+        //temp.pip_head = &(temp.pipbuf[0]) ;  
+        //temp.pip_tail = &(temp.pipbuf[0]) ;  
+        //pipe_tables[t] = *temp;
+    }
+    #endif
 	/* Initialize buffer pools */
 
 	bufinit();

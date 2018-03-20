@@ -29,8 +29,16 @@ syscall	kill(
 
 	send(prptr->prparent, pid);
 	for (i=0; i<3; i++) {
-		close(prptr->prdesc[i]);
-	}
+		#if EJ_Lab2
+        if( prptr->prdesc[i] >= PIPELINE0 && prptr->prdesc[i] <= PIPELINE9 ){
+            pipdelete( prptr->prdesc[i]);
+        }else{
+            close(prptr->prdesc[i]);
+        }    
+        #else
+        close(prptr->prdesc[i]);
+	    #endif
+    }
 
 	freestk(prptr->prstkbase, prptr->prstklen);
 

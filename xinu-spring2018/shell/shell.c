@@ -146,6 +146,12 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
 
     dump_tokens(tok, tokbuf, ntok, "non-built-in");
 
+    #if EJ_Lab2
+    pid32 writer_pid , reader_pid ;
+    did32 devpipe ; 
+    bool8 isReceiver = false ; 
+    #endif 
+
     while (cur < ntok) {
 
         if (toktyp[cur] == SH_TOK_OTHER) {
@@ -172,7 +178,6 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
             childs[cur] = create(cmdtab[cmdtab_index].cfunc,
                                SHELL_CMDSTK, SHELL_CMDPRIO,
                                cmdtab[cmdtab_index].cname, 2, num_args, &tmparg);
-
             /* Set stdinput and stdoutput in child to redirect I/O */
             proctab[childs[cur]].prdesc[0] = stdinput;
             proctab[childs[cur]].prdesc[1] = stdoutput;
@@ -183,13 +188,67 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                 fprintf(dev, SHELL_CREATMSG);
                 return false;
             }
+
+            #if EJ_Lab2 
+            kprintf( " %s has been created \n" , cmdtab[cmdtab_index].cname ) ; 
+            // 1. Check if this process is a receiver ;
+            // 2. Connect it with the sender. 
+            if( isReceiver == true ){
+                kprintf(" [Shell] Connecting [%d] :  Writer [ %d ]  and  Reader [ %d ] \n" 
+                                 , devpipe-PIPELINE0 , writer_pid, reader_pid ) ; 
+                reader_pid = childs[cur] ; 
+                
+                pipconnect( devpipe , writer_pid, reader_pid ) ;
+                //proctab[reader_pid].prdesc[0] = devpipe ; 
+            }
+            // 1. Check if this process is a sender ; 
+            // 2. Create a new pipe
+            // 3. Record this process id as the writer_pid
+            // 4. Indicate the next process to be the Receive 
+            if ( next_cur < ntok && toktyp[next_cur] == SH_TOK_STICK ){
+                devpipe = pipcreate() ;
+                writer_pid = childs[cur] ; 
+                isReceiver = true ;
+                //proctab[writer_pid].prdesc[1] = devpipe ;
+                // check the next 
+                next_cur = next_cur + 1 ;
+                if( next_cur >= ntok ){
+			        fprintf(dev,  " Should be something after a stick (parsing)\n"  );
+                    return false ;
+                }
+                if( toktyp[next_cur] != SH_TOK_OTHER ){
+			        fprintf(dev,  " Should be a TOK_OTHER after a stick  (parsing) \n"  );
+                    return false ;
+                }
+            }
+            kprintf( "reader_pid is %d || writer_pid = %d \n" , reader_pid , writer_pid ) ; 
+            #endif 
+
         } else {
 			fprintf(dev,"%s (parsing)\n", SHELL_SYNERRMSG);
             return false;
         }
         cur = next_cur;
     }
-
+#if EJ_Lab2
+    for (int i=0; i<SHELL_MAXTOK; i++) {
+        if (childs[i] == -1)
+            continue;
+        msg = recvclr();
+        resume(childs[i]);
+    }
+    
+    for (int i=0; i<SHELL_MAXTOK; i++) {
+        if (childs[i] == -1)
+            continue;
+        if(!backgnd) {
+            msg = receive();
+            while (msg != childs[i]) {
+                msg = receive();
+            }
+        }
+    }
+#else
     for (int i=0; i<SHELL_MAXTOK; i++) {
         if (childs[i] == -1)
             continue;
@@ -202,7 +261,7 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
             }
         }
     }
-
+#endif
     return true;
 }
 
