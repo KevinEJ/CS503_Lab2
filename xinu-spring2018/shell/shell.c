@@ -150,6 +150,8 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
     pid32 writer_pid , reader_pid ;
     did32 devpipe ; 
     bool8 isReceiver = false ; 
+    pid32 pip_chain[SHELL_MAXTOK] ; 
+    pid32 *pip_chain_cur = pip_chain ; 
     #endif 
 
     while (cur < ntok) {
@@ -192,23 +194,33 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
             #if EJ_Lab2 
             kprintf( " %s has been created \n" , cmdtab[cmdtab_index].cname ) ; 
             // 1. Check if this process is a receiver ;
-            // 2. Connect it with the sender. 
+            // 2. Add it to the pipe chain
+            // (X) 2. Connect it with the sender. 
             if( isReceiver == true ){
-                kprintf(" [Shell] Connecting [%d] :  Writer [ %d ]  and  Reader [ %d ] \n" 
-                                 , devpipe-PIPELINE0 , writer_pid, reader_pid ) ; 
+                // create if both reader and writer are valid 
+                //devpipe = pipcreate() ;
+                
+                //kprintf(" [Shell] Connecting [%d] :  Writer [ %d ]  and  Reader [ %d ] \n" 
+                //                 , devpipe-PIPELINE0 , writer_pid, reader_pid ) ; 
                 reader_pid = childs[cur] ; 
                 
-                pipconnect( devpipe , writer_pid, reader_pid ) ;
+                *pip_chain_cur++ = reader_pid ; 
+                //pipconnect( devpipe , writer_pid, reader_pid ) ;
                 //proctab[reader_pid].prdesc[0] = devpipe ; 
             }
             // 1. Check if this process is a sender ; 
-            // 2. Create a new pipe
+            // (X) 2. Create a new pipe
             // 3. Record this process id as the writer_pid
             // 4. Indicate the next process to be the Receive 
             if ( next_cur < ntok && toktyp[next_cur] == SH_TOK_STICK ){
-                devpipe = pipcreate() ;
+                //devpipe = pipcreate() ;
                 writer_pid = childs[cur] ; 
-                isReceiver = true ;
+                if( isReceiver == false){ // first process 
+                    isReceiver = true ;
+                    *pip_chain_cur++ = writer_pid ; 
+                }else{
+                    ;// this is second or later process, should have been added to the chain
+                }
                 //proctab[writer_pid].prdesc[1] = devpipe ;
                 // check the next 
                 next_cur = next_cur + 1 ;
@@ -221,7 +233,6 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
                     return false ;
                 }
             }
-            kprintf( "reader_pid is %d || writer_pid = %d \n" , reader_pid , writer_pid ) ; 
             #endif 
 
         } else {
@@ -231,10 +242,27 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
         cur = next_cur;
     }
 #if EJ_Lab2
+    // create and connect all pipes 
+    int32 chain_size = pip_chain_cur - pip_chain ; 
+    pid32 *temp = pip_chain ; 
+    if( chain_size == 1 ){
+        kprintf( "[ERROR]chain size cannot be 1 \n " ) ; 
+        return false ; 
+    }
+    while( temp != (pip_chain_cur-1) && chain_size != 0 ){
+        devpipe = pipcreate() ;
+        writer_pid = *temp++ ; 
+        reader_pid = *temp   ;
+        kprintf(" [Shell] Connecting [%d] :  Writer [ %d ]  and  Reader [ %d ] \n" 
+                 , devpipe-PIPELINE0 , writer_pid, reader_pid ) ; 
+        pipconnect( devpipe , writer_pid, reader_pid ) ;
+    }
+    // resume all processes 
     for (int i=0; i<SHELL_MAXTOK; i++) {
         if (childs[i] == -1)
             continue;
         msg = recvclr();
+        kprintf( "Process_id [ %d ] is being resuming  \n" , childs[i] ) ; 
         resume(childs[i]);
     }
     

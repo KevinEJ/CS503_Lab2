@@ -31,7 +31,7 @@ syscall	kill(
 	for (i=0; i<3; i++) {
 		#if EJ_Lab2
         if( prptr->prdesc[i] >= PIPELINE0 && prptr->prdesc[i] <= PIPELINE9 ){
-            pipdelete( prptr->prdesc[i]);
+            pipdisconnect( prptr->prdesc[i]);
         }else{
             close(prptr->prdesc[i]);
         }    

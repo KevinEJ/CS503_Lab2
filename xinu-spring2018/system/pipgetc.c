@@ -8,8 +8,14 @@ devcall pipgetc(struct dentry *devptr) {
     
     if( currpid != pipeptr->reader_pid )
         return SYSERR ; 
-    if( pipeptr->state != PIPE_CONNECTED )
+    if( pipeptr->state != PIPE_CONNECTED && pipeptr->state != PIPE_HALF_CONNECTED )
         return SYSERR ; 
+    // If the pipe has been disconnected by the reader
+    // Then check whether if the buffer is empty.
+    // [??] Return SYSERR or Call DISCONNECT; 
+    if( pipeptr->pip_head == pipeptr->pip_tail && pipeptr->state == PIPE_HALF_CONNECTED){
+        return SYSERR ; 
+    }
 
     wait(pipeptr->Reader_sema);
 	ch = *pipeptr->pip_head++;

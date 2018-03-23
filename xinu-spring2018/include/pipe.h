@@ -11,6 +11,7 @@ enum pipe_state_t {
 	PIPE_FREE,
 	PIPE_USED,
 	PIPE_CONNECTED,
+	PIPE_HALF_CONNECTED,
 	PIPE_OTHER
 };
 
