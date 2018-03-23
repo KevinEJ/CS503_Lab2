@@ -249,8 +249,20 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
         kprintf( "[ERROR]chain size cannot be 1 \n " ) ; 
         return false ; 
     }
+    // check whether there are enough pipe to use 
+    int32 num_valid_pip = 0 ; 
+    for( int32 i = 0 ; i < MAXPIPES ; i ++ ){
+        if( pipe_tables[i].state == PIPE_FREE ){
+            num_valid_pip ++ ;  
+        }
+    }
+    if( num_valid_pip < chain_size -1 ){
+        kprintf( "not enough pipe to be used \n") ; 
+        return false ; 
+    }
     while( temp != (pip_chain_cur-1) && chain_size != 0 ){
         devpipe = pipcreate() ;
+        
         writer_pid = *temp++ ; 
         reader_pid = *temp   ;
         kprintf(" [Shell] Connecting [%d] :  Writer [ %d ]  and  Reader [ %d ] \n" 

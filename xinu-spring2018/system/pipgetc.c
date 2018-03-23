@@ -17,14 +17,16 @@ devcall pipgetc(struct dentry *devptr) {
         return SYSERR ; 
     }
 
-    wait(pipeptr->Reader_sema);
-	ch = *pipeptr->pip_head++;
+    if( wait(pipeptr->Reader_sema) == OK ){
+	    ch = *pipeptr->pip_head++;
 	
-    if (pipeptr->pip_head >= &pipeptr->pipbuf[PIPE_SIZE]) {
-		pipeptr->pip_head = pipeptr->pipbuf;
-	}
-    signal(pipeptr->Sender_sema) ;
-    
-	return (devcall)ch;
+        if (pipeptr->pip_head >= &pipeptr->pipbuf[PIPE_SIZE]) {
+	    	pipeptr->pip_head = pipeptr->pipbuf;
+    	}
+        signal(pipeptr->Sender_sema) ;
+	    return (devcall)ch;
+    }else{
+        return SYSERR ; 
+    }
 }
 
