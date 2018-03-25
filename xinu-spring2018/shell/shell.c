@@ -277,7 +277,24 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
         kprintf( "Process_id [ %d ] is being resuming  \n" , childs[i] ) ; 
         resume(childs[i]);
     }
-    
+    bool8 if_Proc_Remain = true ;
+    while( if_Proc_Remain && !backgnd ){
+        msg = receive() ;
+        for (int i=0; i<SHELL_MAXTOK; i++) {
+            if(childs[i] == -1)
+                continue ;
+            if( msg == childs[i]){
+                childs[i] = -1 ; 
+                kprintf( "[SHELL]  msg  =>>  [%d]  \n" , msg ) ; 
+            }
+        }
+        if_Proc_Remain = false ;
+        for (int i=0; i<SHELL_MAXTOK; i++) {
+            if(childs[i] != -1)
+                if_Proc_Remain = true ; 
+        }
+    }
+/*
     for (int i=0; i<SHELL_MAXTOK; i++) {
         if (childs[i] == -1)
             continue;
@@ -286,8 +303,10 @@ static bool8 handle_non_builtin(did32 dev, bool8 backgnd,
             while (msg != childs[i]) {
                 msg = receive();
             }
+            kprintf( "[SHELL]  msg  =>>  [%d]  \n" , msg ) ; 
         }
     }
+*/
 #else
     for (int i=0; i<SHELL_MAXTOK; i++) {
         if (childs[i] == -1)
